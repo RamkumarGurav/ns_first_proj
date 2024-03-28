@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Todo } from './todo.entity';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { plainToClass } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @Injectable()
 export class TodoService {
@@ -11,10 +13,20 @@ export class TodoService {
     @InjectRepository(Todo)
     private todoRepository: Repository<Todo>,
   ) {}
+  async create(createTodoDto: CreateTodoDto): Promise<{ [key:string]:any}> {
+    // Transform CreateTodoDto into Todo entity
+    // const todoEntity = plainToClass(Todo, createTodoDto);
+    
+    // Validate the transformed entity
+    // const errors = await validate(todoEntity);
+    // if (errors.length > 0) {
+    //   throw new BadRequestException(errors);
+    // }
+    
+    // Save the new Todo entity to the database
+    const savedTodo = await this.todoRepository.save(createTodoDto);
 
-  async create(createTodoDto: CreateTodoDto): Promise<Todo> {
-    const todo = this.todoRepository.create(createTodoDto);
-    return this.todoRepository.save(todo);
+    return {statusCode: 201, status: true, message: "Resource Created successfully", data: savedTodo};
   }
 
   async findAll(): Promise<Todo[]> {

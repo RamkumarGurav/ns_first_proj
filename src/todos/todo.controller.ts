@@ -6,11 +6,15 @@ import {
   Param,
   Patch,
   Delete,
+  ValidationPipe,
+  UsePipes,
+  BadRequestException,
 } from '@nestjs/common';
 import { TodoService } from './todo.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { Todo } from './todo.entity';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { TodoPipe } from './pipes/todo.pipe';
 
 @Controller('todos')
 export class TodoController {
@@ -21,16 +25,21 @@ export class TodoController {
     return 'Welcome to Todos API';
   }
 
-  @Post() // Route: POST /todos
-  async create(@Body() createTodoDto: CreateTodoDto): Promise<Todo> {
+
+
+  @Post()
+  async create(@Body(new ValidationPipe()) createTodoDto: CreateTodoDto): Promise<{ [key:string]:any}> {
     return this.todoService.create(createTodoDto);
   }
 
   @Patch(':id')
   async update(
     @Param('id') id: number,
-    @Body() updateTodoDto: UpdateTodoDto,
+    @Body(new ValidationPipe()) updateTodoDto: UpdateTodoDto,
   ): Promise<Todo> {
+    if(Object.keys(updateTodoDto).length==0){
+      throw new BadRequestException("Request Can't be Empty");
+    }
     return this.todoService.update(id, updateTodoDto);
   }
 

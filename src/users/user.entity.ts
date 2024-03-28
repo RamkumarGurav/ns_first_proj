@@ -1,4 +1,4 @@
-import { isString } from 'class-validator';
+import { IsString, isString } from 'class-validator';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
@@ -7,10 +7,9 @@ export class User {
   id: number;
 
   @Column()
-  firstName: string;
+  name: string;
 
-  @Column()
-  lastName: string;
+  
 
   @Column()
   email: string;
@@ -18,9 +17,14 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
-  role: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: '1' })
+  @IsString()
+  status: string;
+
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  added_on: Date;
+
+  @Column({ type: 'datetime', default: null, onUpdate: 'CURRENT_TIMESTAMP' })
+  updated_on: Date;
 }

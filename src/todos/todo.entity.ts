@@ -2,8 +2,7 @@ import { IsBoolean, IsDate, IsDateString, IsString } from 'class-validator';
 import {
   Entity,
   Column,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 
 @Entity({ name: 'todo' })

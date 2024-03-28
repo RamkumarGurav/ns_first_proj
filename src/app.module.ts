@@ -12,7 +12,7 @@ import { Todo } from './todos/todo.entity';
       port: 3306,
       username: 'root',
       password: '',
-      database: 'ns_first_proj',
+      database: 'ns_first_proj_db',
       entities: [User, Todo],
       synchronize: true,
       timezone: 'Asia/Kolkata',
