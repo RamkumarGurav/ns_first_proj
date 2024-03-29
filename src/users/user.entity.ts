@@ -1,7 +1,7 @@
-import { IsString, isString } from 'class-validator';
+import { IsNotEmpty, IsString, isString } from 'class-validator';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -9,14 +9,12 @@ export class User {
   @Column()
   name: string;
 
-  
-
   @Column()
   email: string;
 
   @Column()
+  @IsNotEmpty()
   password: string;
-
 
   @Column({ default: '1' })
   @IsString()

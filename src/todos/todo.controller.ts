@@ -9,6 +9,12 @@ import {
   ValidationPipe,
   UsePipes,
   BadRequestException,
+  UseFilters,
+  HttpStatus,
+  HttpException,
+  ForbiddenException,
+  NotFoundException,
+  Res,
 } from '@nestjs/common';
 import { TodoService } from './todo.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -20,15 +26,50 @@ import { TodoPipe } from './pipes/todo.pipe';
 export class TodoController {
   constructor(private readonly todoService: TodoService) {}
 
-  @Get('welcome') // Route: GET /todos
-  welcome(): string {
-    return 'Welcome to Todos API';
+  // =============> USING CustomHttpExceptionFilter <==============
+  @Get('CustomHttpExceptionFilter') // Route: GET /todos
+  welcome(@Res() res: Response): string {
+    //======CASE-1
+    // throw new HttpException('This is a Bad request error message', HttpStatus.BAD_REQUEST);
+    // throw new HttpException(
+    //   'This is a FORBIDDEN request error message',
+    //   HttpStatus.FORBIDDEN,
+    // );
+    // throw new HttpException(
+    //   'This is a NOT FOUND request error message',
+    //   HttpStatus.NOT_FOUND,
+    // );
+    //======
+
+    //======CASE-2
+    // throw new BadRequestException('This is a Bad request error message ');
+    // throw new ForbiddenException('You are Not allowd to this action');
+    // throw new NotFoundException('Resource Not Found');
+    //======
+
+    //======CASE-3
+    throw new BadRequestException('Something bad happened', {
+      cause: new Error(),
+      description: 'Some error description',
+    });
+    // throw new ForbiddenException('Something bad happened', {
+    //   cause: new Error(),
+    //   description: 'Some error description',
+    // });
+    // throw new NotFoundException('Something bad happened', {
+    //   cause: new Error(),
+    //   description: 'Some error description',
+    // });
+    //======
+    console.log(process.env.MODE);
+    return 'HI DE';
   }
-
-
+  // =======================================
 
   @Post()
-  async create(@Body(new ValidationPipe()) createTodoDto: CreateTodoDto): Promise<{ [key:string]:any}> {
+  async create(
+    @Body(new ValidationPipe()) createTodoDto: CreateTodoDto,
+  ): Promise<{ [key: string]: any }> {
     return this.todoService.create(createTodoDto);
   }
 
@@ -37,7 +78,7 @@ export class TodoController {
     @Param('id') id: number,
     @Body(new ValidationPipe()) updateTodoDto: UpdateTodoDto,
   ): Promise<Todo> {
-    if(Object.keys(updateTodoDto).length==0){
+    if (Object.keys(updateTodoDto).length == 0) {
       throw new BadRequestException("Request Can't be Empty");
     }
     return this.todoService.update(id, updateTodoDto);
