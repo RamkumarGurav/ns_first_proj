@@ -1,4 +1,4 @@
-import { Transform } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer';
 import {
   IsDefined,
   IsEmail,
@@ -7,9 +7,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-export class CreateUserDto {
+export class CreateUserExtraDto {
   @IsDefined({ message: 'Name is required' }) // Ensure name property is defined
   @IsNotEmpty({ message: 'Name should not be empty' })
   @IsString({ message: 'Name must be a String' })
@@ -28,4 +27,7 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Password should not be empty' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password: string;
+
+  @Exclude()
+  extra: any;
 }

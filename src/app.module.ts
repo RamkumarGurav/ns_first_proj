@@ -6,7 +6,7 @@ import { Todo } from './todos/todo.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { APP_FILTER } from '@nestjs/core';
-import { HttpErrorFilter } from './utility/exception-filters/http-error.filter';
+import { HttpErrorFilter } from './utility/common/exception-filters/http-error.filter';
 
 @Module({
   imports: [

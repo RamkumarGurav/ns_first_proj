@@ -14,15 +14,7 @@ export class TodoService {
     private todoRepository: Repository<Todo>,
   ) {}
   async create(createTodoDto: CreateTodoDto): Promise<{ [key:string]:any}> {
-    // Transform CreateTodoDto into Todo entity
-    // const todoEntity = plainToClass(Todo, createTodoDto);
-    
-    // Validate the transformed entity
-    // const errors = await validate(todoEntity);
-    // if (errors.length > 0) {
-    //   throw new BadRequestException(errors);
-    // }
-    
+
     // Save the new Todo entity to the database
     const savedTodo = await this.todoRepository.save(createTodoDto);
 

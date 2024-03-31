@@ -1,5 +1,6 @@
 import {
   ArgumentsHost,
+  BadRequestException,
   Catch,
   ExceptionFilter,
   HttpException,
@@ -31,27 +32,37 @@ export class HttpErrorFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR; // Otherwise, default to 500 Internal Server Error
 
     // Determine the message to be sent in the response
-    const message =
+    let errorType = exception?.name;
+    let message: string | string[] =
       exception instanceof HttpException
         ? exception.message // If it's an HttpException, get the message
-        : exception.message; // Otherwise, use a generic message
+        : 'Something Went Wrong'; // Otherwise, use a generic message
 
+    // Check if it's a validation-related error and extract the messages accordingly
+    if (exception instanceof BadRequestException) {
+      // If it's a BadRequestException (validation error), extract the validation error messages
+      message = exception.getResponse()['message'] || exception.message;
+      errorType = exception.getResponse()['errorType'];
+    }
+
+    console.log(exception);
     // Create error response objects for development and production environments
     const devErrorResponse: any = {
       statusCode,
       status: false,
-      message: exception?.message, // Optional: Include the message of the exception
-      errorName: exception?.name, // Optional: Include the name of the exception
+      message: message, // Optional: Include the message of the exception
+      errorName: errorType, // Optional: Include the name of the exception
       timestamp: new Date().toISOString(),
       path: request.originalUrl,
       method: request.method,
-      stact: exception?.stack,
+      stack: exception?.stack,
     };
 
     const prodErrorResponse: any = {
       statusCode,
       status: false,
       message,
+      errorName: errorType, // Optional: Include the name of the exception
     };
 
     // Log the error details

@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   Body,
   Controller,
@@ -7,23 +8,40 @@ import {
   NotFoundException,
   Param,
   Post,
+  Put,
   Query,
   Res,
   UseFilters,
+  UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { plainToClass, plainToInstance } from 'class-transformer';
+import {
+  instanceToPlain,
+  plainToClass,
+  plainToInstance,
+} from 'class-transformer';
 import { validate } from 'class-validator';
-import { CreateUserDto2 } from './dtos/create-user2.dto';
+import { CreateUserExtraDto } from './dtos/create-user-extra.dto';
 import { Response } from 'express';
-import { HttpErrorFilter } from 'src/utility/exception-filters/http-error.filter';
+import { HttpErrorFilter } from 'src/utility/common/exception-filters/http-error.filter';
+import { AuthGuard } from 'src/utility/common/guards/auth.guard';
+import { NullToStringInterceptor } from 'src/utility/common/interceptors/nulltostring';
+import { UpdateUserDto } from './dtos/udpate-user.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('welcome')
+  @UseGuards(new AuthGuard())
+  @UseInterceptors(new NullToStringInterceptor())
+  welcome() {
+    return null;
+  }
 
   @Get('test1')
   @UseFilters(HttpErrorFilter)
@@ -39,114 +57,112 @@ export class UsersController {
 
   // =============> CRUD <==============
 
-  @Post('case1/without-extra')
-  @UsePipes(new ValidationPipe({ whitelist: true })) //this removes the extra props from the req body
-  async createOne1(@Body() createUserDto: CreateUserDto) {
-    console.log(createUserDto);
-    return createUserDto;
+  @Post('case1/with-extra')
+  async createOne1(@Body() body: any, @Res() res: Response) {
+    // =============> handling extra req props <==============
+    let dummyUrl = body.extra && body.extra.url;
+    console.log(dummyUrl);
+    // throw new NotFoundException('NOT FOINDconst');
 
-    // =============> REQ1 <==============
-    // {
-    //   "name": "user1 ",
-    //     "email":"user1@gmail.com ",
-    //     "password":"asdfasdf",
-    //     "extra":"this is extra"
-    // }
-    // =============> RES1 <==============
-    // {
-    //   "name": "user1",
-    //     "email":"user1@gmail.com",
-    //     "password":"asdfasdf",
-    // }
-    // =============> REQ2 <==============
-    //   {
-    //     "email":"user1@gmail.com  ",
-    //     "password":"asdfasdf",
-    //     "extra":"this is extra"
-    // }
-    // =============> RES2 <==============
-    //   {
-    //     "message": [
-    //         "Name is required",
-    //         "Name must not exceed 200 characters",
-    //         "Name must be at least 2 characters long",
-    //         "Name must be a String",
-    //         "Name should not be empty"
-    //     ],
-    //     "error": "Bad Request",
-    //     "statusCode": 400
-    // }
-  }
+    // =======================================
 
-  @Post('case2/with-extra')
-  async createOne2(@Body() body: any, @Res() res: Response) {
-    try {
-      let dummyUrl = body.extra && body.extra.url;
-      console.log(dummyUrl);
-      const validatedCreateUserDto = plainToInstance(CreateUserDto2, body); //" excludeExtraneousValues: true," this removes the extra props from the req
-      // Validate the transformed object
-      const validationErrors = await validate(validatedCreateUserDto);
-      if (validationErrors.length > 0) {
-        // Extract error messages from validationErrors
-        const errorMessages = validationErrors
-          .map((error) => Object.values(error.constraints))
-          .flat();
-
-        // Throw a BadRequestException with error messages
-        throw new BadRequestException({
-          message: errorMessages,
-          error: 'Bad Request',
-          statusCode: 400,
-        });
-      }
-      // Attempt to save the user entity
-
-      // Attempt to save the user entity
-      // throw new InternalServerErrorException('Soory:');
-      const newUser = this.usersService.createOne(validatedCreateUserDto);
-      return res.status(201).json({
-        statusCode: 201,
-        status: true,
-        message: 'Successfully Created the User',
-        data: newUser,
+    // =============> converting req body to dto and validating <==============
+    const validatedCreateUserDto = plainToInstance(CreateUserExtraDto, body); //" excludeExtraneousValues: true," this removes the extra props from the req
+    console.log(validatedCreateUserDto);
+    // Validate the transformed object
+    const validationErrors = await validate(validatedCreateUserDto);
+    if (validationErrors.length > 0) {
+      // Extract error messages from validationErrors
+      let errorObj = {};
+      validationErrors.forEach((error) => {
+        errorObj[error.property] = Object.values(error.constraints)[0];
       });
-    } catch (error) {
-      throw new Error('hi');
+
+      // Throw a BadRequestException with error messages
+      throw new BadRequestException({
+        message: errorObj,
+        errorType: 'Validation Error',
+        statusCode: 400,
+      });
+      // throw new BadRequestException(errorMessages[0]);
     }
 
-    // =============> REQ1 <==============
-    // {
-    //   "name": "user1 ",
-    //     "email":"user1@gmail.com ",
-    //     "password":"asdfasdf",
-    //       "extra":{"url":"dummy.com"}
-    // }
-    // =============> RES1 <==============
-    // {
-    //   "name": "user1",
-    //     "email":"user1@gmail.com",
-    //     "password":"asdfasdf",
-    // }
-    // =============> REQ2 <==============
-    //   {
-    //     "email":"user1@gmail.com  ",
-    //     "password":"asdfasdf",
-    //     "extra":"this is extra"
-    // }
-    // =============> RES2 <==============
-    //   {
-    //     "message": [
-    //         "Name is required",
-    //         "Name must not exceed 200 characters",
-    //         "Name must be at least 2 characters long",
-    //         "Name must be a String",
-    //         "Name should not be empty"
-    //     ],
-    //     "error": "Bad Request",
-    //     "statusCode": 400
-    // }
+    // =======================================
+
+    // =============> passing validated dto to service <==============
+    const newUser = await this.usersService.createOne(validatedCreateUserDto);
+    // =======================================
+
+    // =============> sending response <==============
+    return res.status(201).json({
+      statusCode: 201,
+      status: true,
+      message: 'Successfully Created the User',
+      data: newUser,
+    });
   }
 
+  @Post('case2/without-extra')
+  // @UsePipes(new ValidationPipe({ whitelist: true })) //this removes the extra props from the req body
+  async createOne2(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
+    // =============> passing validated dto to service <==============
+    const newUser = await this.usersService.createOne(createUserDto);
+    // =======================================
+
+    // =============> sending response <==============
+    return res.status(201).json({
+      statusCode: 201,
+      status: true,
+      message: 'Successfully Created the User',
+      data: newUser,
+    });
+    // ===========================
+  }
+
+  @Put(':id')
+  async updateOne1(
+    @Param('id') id: number,
+    @Body() body: any,
+    @Res() res: Response,
+  ) {
+    // =============> handling extra req props <==============
+    let dummyUrl = body.extra && body.extra.url;
+    console.log(dummyUrl);
+    // =======================================
+
+    // =============> converting req body to dto and validating <==============
+    const validatedUpdateUserDto = plainToInstance(UpdateUserDto, body); //" excludeExtraneousValues: true," this removes the extra props from the req
+    console.log(validatedUpdateUserDto);
+
+    // Validate the transformed object
+    const validationErrors = await validate(validatedUpdateUserDto);
+    if (validationErrors.length > 0) {
+      // Extract error messages from validationErrors
+      const errorMessages = validationErrors
+        .map((error) => Object.values(error.constraints))
+        .flat();
+
+      // Throw a BadRequestException with error messages
+      throw new BadRequestException({
+        message: errorMessages,
+        error: 'Bad Request',
+        statusCode: 400,
+      });
+    }
+
+    // =============> passing validated dto to service <==============
+    const user = await this.usersService.updateOne(id, validatedUpdateUserDto);
+    // =======================================
+
+    // =============> sending response <==============
+    return res.status(200).json({
+      statusCode: 200,
+      status: true,
+      message: 'Successfully Updated the User',
+      data: user,
+    });
+    // ===========================
+  }
   @Get()
   async findAll(@Query() queryParams: any, @Res() res: Response): Promise<any> {
     console.log(queryParams);

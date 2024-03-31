@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityNotFoundError, Like, Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
+import { UpdateUserDto } from './dtos/udpate-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -18,11 +19,31 @@ export class UsersService {
 
   async createOne(createUserDto: CreateUserDto) {
     // Attempt to save the user entity
+    const user = this.usersRepository.create(createUserDto);
+    return await this.usersRepository.save(user); 
+  }
 
-    // Attempt to save the user entity
-    const newUser = await this.usersRepository.save(createUserDto);
-    throw new NotFoundException('Resource NOt Found');
-    return newUser;
+  async updateOne(id: number, updateUserDto: UpdateUserDto) {
+    const question = await this.usersRepository.findOneBy({ id: id });
+
+    if (!question) {
+      throw new NotFoundException(`Question with ID ${id} not found`);
+    }
+
+    // Iterate over each property in the update DTO
+    for (const key of Object.keys(updateUserDto)) {
+      // Check if the property exists in the question entity
+      if (key in question) {
+        // Update the property value
+        question[key] = UpdateUserDto[key];
+      } else {
+        // If the property doesn't exist in the question entity, throw BadRequestException
+        throw new BadRequestException(`Invalid property: ${key}`);
+      }
+    }
+
+    // Save the updated question entity
+    return await this.usersRepository.save(question);
   }
 
   async remove(id: number): Promise<void> {
